@@ -1,7 +1,8 @@
 // Global variables
-const supabaseUrl = 'YOUR_SUPABASE_URL'; // Replace with actual URL
-const supabaseKey = 'YOUR_SUPABASE_ANON_KEY'; // Replace with actual key
-const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+const supabaseClientUrl = 'YOUR_SUPABASE_URL'; // Replace with actual URL
+const supabaseClientKey = 'YOUR_SUPABASE_ANON_KEY'; // Replace with actual key
+const { createClient } = supabaseClient;
+const supabaseClientClient = createClient(supabaseClientUrl, supabaseClientKey);
 
 // Cache for options
 let optionsCache = {};
@@ -9,7 +10,7 @@ let optionsCache = {};
 // Function to fetch branches
 async function fetchBranches() {
   if (optionsCache.branches) return optionsCache.branches;
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('files')
     .select('branch')
     .eq('status', 'approved')
@@ -24,7 +25,7 @@ async function fetchBranches() {
 async function fetchSemesters(branch) {
   const cacheKey = `semesters_${branch}`;
   if (optionsCache[cacheKey]) return optionsCache[cacheKey];
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('files')
     .select('semester')
     .eq('branch', branch)
@@ -40,7 +41,7 @@ async function fetchSemesters(branch) {
 async function fetchSubjects(branch, semester) {
   const cacheKey = `subjects_${branch}_${semester}`;
   if (optionsCache[cacheKey]) return optionsCache[cacheKey];
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('files')
     .select('subject')
     .eq('branch', branch)
@@ -57,7 +58,7 @@ async function fetchSubjects(branch, semester) {
 async function fetchTypes(branch, semester, subject) {
   const cacheKey = `types_${branch}_${semester}_${subject}`;
   if (optionsCache[cacheKey]) return optionsCache[cacheKey];
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('files')
     .select('type')
     .eq('branch', branch)
@@ -73,7 +74,7 @@ async function fetchTypes(branch, semester, subject) {
 
 // Function to fetch files for download
 async function fetchFiles(branch, semester, subject, type) {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('files')
     .select('*')
     .eq('branch', branch)
@@ -110,7 +111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         card.innerHTML = `
           <h3>${file.filename}</h3>
           <p>Branch: ${file.branch} | Semester: ${file.semester} | Subject: ${file.subject} | Type: ${file.type}</p>
-          <a href="${supabaseUrl}/storage/v1/object/public/pdfs/${file.branch}/${file.semester}/${file.subject}/${file.type}/${file.filename}" target="_blank">Download</a>
+          <a href="${supabaseClientUrl}/storage/v1/object/public/pdfs/${file.branch}/${file.semester}/${file.subject}/${file.type}/${file.filename}" target="_blank">Download</a>
         `;
         filesGrid.appendChild(card);
       });
@@ -138,7 +139,7 @@ if (uploadForm) {
         return;
       }
       const filePath = `${branch}/${semester}/${subject}/${type}/${file.name}`;
-      const { data, error } = await supabase.storage
+      const { data, error } = await supabaseClient.storage
         .from('pdfs')
         .upload(filePath, file);
       if (error) {
@@ -147,7 +148,7 @@ if (uploadForm) {
         return;
       }
       // Insert metadata
-      const { error: insertError } = await supabase
+      const { error: insertError } = await supabaseClient
         .from('files')
         .insert({
           filename: file.name,
@@ -164,7 +165,7 @@ if (uploadForm) {
         return;
       }
     }
-    alert('Upload successful, pending approval');
+    alert('Files uploaded successfully. Admin will review them.');
     uploadForm.reset();
   });
 }
@@ -184,10 +185,11 @@ if (loginForm) {
     });
     const result = await response.json();
     if (result.token) {
+      alert('Login successful');
       localStorage.setItem('token', result.token);
       window.location.href = '/admin/dashboard';
     } else {
-      alert('Invalid credentials');
+      alert('Incorrect username or password');
     }
   });
 }
@@ -222,19 +224,29 @@ async function loadPendingFiles() {
 
 async function approveFile(id) {
   const token = localStorage.getItem('token');
-  await fetch(`/api/approve/${id}`, {
+  const response = await fetch(`/api/approve/${id}`, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${token}` }
   });
+  if (response.ok) {
+    alert('File approved successfully');
+  } else {
+    alert('Failed to approve file');
+  }
   loadPendingFiles();
 }
 
 async function rejectFile(id) {
   const token = localStorage.getItem('token');
-  await fetch(`/api/reject/${id}`, {
+  const response = await fetch(`/api/reject/${id}`, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${token}` }
   });
+  if (response.ok) {
+    alert('File rejected successfully');
+  } else {
+    alert('Failed to reject file');
+  }
   loadPendingFiles();
 }
 

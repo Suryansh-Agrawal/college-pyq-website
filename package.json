@@ -4,7 +4,6 @@
   "description": "A lightweight website for students to view and download PYQs, Notes, and CT papers with admin approval system.",
   "main": "index.js",
   "scripts": {
-    "dev": "vercel dev",
     "build": "echo 'No build step required for static site'",
     "start": "vercel --prod"
   },
