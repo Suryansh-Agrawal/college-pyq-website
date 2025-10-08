@@ -431,10 +431,35 @@ async function loadApprovedFiles() {
     card.innerHTML = `
       <h3>${file.filename}</h3>
       <p>Branch: ${file.branch} | Semester: ${file.semester} | Subject: ${file.subject} | Type: ${file.type}</p>
-      <button onclick="deleteFile(${file.id})">Delete</button>
+      <button onclick="moveFile('${file.id}', '${file.type}')">Move</button>
+      <button onclick="deleteFile('${file.id}')">Delete</button>
     `;
     grid.appendChild(card);
   });
+}
+
+async function moveFile(id, currentType) {
+  const newType = prompt(`Current type: ${currentType}. Enter new type (PYQ, CT, Notes):`);
+  if (!newType || !['PYQ', 'CT', 'Notes'].includes(newType)) {
+    alert('Invalid type');
+    return;
+  }
+  if (newType === currentType) {
+    alert('Same type');
+    return;
+  }
+  const token = localStorage.getItem('token');
+  const response = await fetch(`/api/move/${id}`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ newType })
+  });
+  if (response.ok) {
+    alert('File moved successfully');
+    loadApprovedFiles();
+  } else {
+    alert('Failed to move file');
+  }
 }
 
 async function deleteFile(id) {
