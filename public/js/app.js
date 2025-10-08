@@ -3,6 +3,10 @@ let supabaseClient;
 let supabaseUrl;
 
 async function initSupabase() {
+  if (typeof supabase === 'undefined') {
+    console.error('Supabase CDN not loaded');
+    return;
+  }
   try {
     const response = await fetch('/api/config');
     const config = await response.json();
@@ -107,30 +111,124 @@ function populateSelect(selectElement, options) {
   });
 }
 
-// Load all approved files on page load
+// Hierarchical navigation
+let navStack = [];
+
 document.addEventListener('DOMContentLoaded', async () => {
   await initSupabase();
-  const filesGrid = document.getElementById('files-grid');
-  if (filesGrid) {
-    try {
-      const response = await fetch('/api/files');
-      const files = await response.json();
-      filesGrid.innerHTML = '';
-      files.forEach(file => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-          <h3>${file.filename}</h3>
-          <p>Branch: ${file.branch} | Semester: ${file.semester} | Subject: ${file.subject} | Type: ${file.type}</p>
-          <a href="${supabaseUrl}/storage/v1/object/public/pdfs/${file.branch}/${file.semester}/${file.subject}/${file.type}/${file.filename}" target="_blank">Download</a>
-        `;
-        filesGrid.appendChild(card);
-      });
-    } catch (error) {
-      console.error('Error fetching files:', error);
+  loadBranches();
+  document.getElementById('back-btn').addEventListener('click', goBack);
+});
+
+async function loadBranches() {
+  try {
+    const response = await fetch('/api/branches');
+    const branches = await response.json();
+    renderCards(branches, 'branch');
+  } catch (error) {
+    console.error('Error fetching branches:', error);
+  }
+}
+
+async function loadSemesters(branch) {
+  try {
+    const response = await fetch(`/api/semesters?branch=${branch}`);
+    const semesters = await response.json();
+    renderCards(semesters, 'semester', branch);
+  } catch (error) {
+    console.error('Error fetching semesters:', error);
+  }
+}
+
+async function loadSubjects(branch, semester) {
+  try {
+    const response = await fetch(`/api/subjects?branch=${branch}&semester=${semester}`);
+    const subjects = await response.json();
+    renderCards(subjects, 'subject', branch, semester);
+  } catch (error) {
+    console.error('Error fetching subjects:', error);
+  }
+}
+
+async function loadTypes(branch, semester, subject) {
+  try {
+    const response = await fetch(`/api/types?branch=${branch}&semester=${semester}&subject=${subject}`);
+    const types = await response.json();
+    renderCards(types, 'type', branch, semester, subject);
+  } catch (error) {
+    console.error('Error fetching types:', error);
+  }
+}
+
+async function loadFiles(branch, semester, subject, type) {
+  try {
+    const response = await fetch('/api/files');
+    const allFiles = await response.json();
+    const files = allFiles.filter(f => f.branch === branch && f.semester === semester && f.subject === subject && f.type === type);
+    renderFileCards(files);
+  } catch (error) {
+    console.error('Error fetching files:', error);
+  }
+}
+
+function renderCards(items, level, ...params) {
+  const grid = document.getElementById('files-grid');
+  grid.innerHTML = '';
+  items.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `<h3>${item}</h3>`;
+    card.onclick = () => navigate(level, item, ...params);
+    grid.appendChild(card);
+  });
+  document.getElementById('back-btn').style.display = navStack.length > 0 ? 'block' : 'none';
+}
+
+function renderFileCards(files) {
+  const grid = document.getElementById('files-grid');
+  grid.innerHTML = '';
+  files.forEach(file => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <h3>${file.filename}</h3>
+      <a href="${supabaseUrl}/storage/v1/object/public/pdfs/${file.branch}/${file.semester}/${file.subject}/${file.type}/${file.filename}" target="_blank">Download</a>
+    `;
+    grid.appendChild(card);
+  });
+  document.getElementById('back-btn').style.display = navStack.length > 0 ? 'block' : 'none';
+}
+
+function navigate(level, item, ...params) {
+  navStack.push({ level, item, params });
+  if (level === 'branch') {
+    loadSemesters(item);
+  } else if (level === 'semester') {
+    loadSubjects(params[0], item);
+  } else if (level === 'subject') {
+    loadTypes(params[0], params[1], item);
+  } else if (level === 'type') {
+    loadFiles(params[0], params[1], params[2], item);
+  }
+}
+
+function goBack() {
+  if (navStack.length > 0) {
+    navStack.pop();
+    if (navStack.length === 0) {
+      loadBranches();
+    } else {
+      const last = navStack[navStack.length - 1];
+      if (last.level === 'branch') {
+        loadSemesters(last.item);
+      } else if (last.level === 'semester') {
+        loadSubjects(last.params[0], last.item);
+      } else if (last.level === 'subject') {
+        loadTypes(last.params[0], last.params[1], last.item);
+      }
     }
   }
-});
+}
 
 // Upload form handling
 const uploadForm = document.getElementById('upload-form');
@@ -138,6 +236,10 @@ if (uploadForm) {
   uploadForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     await initSupabase();
+    if (!supabaseClient) {
+      alert('Failed to initialize Supabase. Please check your connection.');
+      return;
+    }
     const formData = new FormData(uploadForm);
     const files = formData.getAll('files');
     const branch = formData.get('branch');
@@ -223,12 +325,16 @@ async function loadPendingFiles() {
     row.insertCell(3).textContent = file.subject;
     row.insertCell(4).textContent = file.type;
     const actionsCell = row.insertCell(5);
+    const viewBtn = document.createElement('button');
+    viewBtn.textContent = 'View';
+    viewBtn.onclick = () => window.open(`${supabaseUrl}/storage/v1/object/public/pdfs/${file.branch}/${file.semester}/${file.subject}/${file.type}/${file.filename}`, '_blank');
     const approveBtn = document.createElement('button');
     approveBtn.textContent = 'Approve';
     approveBtn.onclick = () => approveFile(file.id);
     const rejectBtn = document.createElement('button');
     rejectBtn.textContent = 'Reject';
     rejectBtn.onclick = () => rejectFile(file.id);
+    actionsCell.appendChild(viewBtn);
     actionsCell.appendChild(approveBtn);
     actionsCell.appendChild(rejectBtn);
   });
@@ -271,5 +377,36 @@ document.addEventListener('DOMContentLoaded', () => {
     loginSection.style.display = 'none';
     dashboardSection.style.display = 'block';
     loadPendingFiles();
+    loadApprovedFiles();
   }
 });
+
+async function loadApprovedFiles() {
+  const response = await fetch('/api/files');
+  const files = await response.json();
+  const grid = document.getElementById('approved-files-grid');
+  grid.innerHTML = '';
+  files.forEach(file => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <h3>${file.filename}</h3>
+      <p>Branch: ${file.branch} | Semester: ${file.semester} | Subject: ${file.subject} | Type: ${file.type}</p>
+      <button onclick="deleteFile(${file.id}, '${file.branch}/${file.semester}/${file.subject}/${file.type}/${file.filename}')">Delete</button>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+async function deleteFile(id, filePath) {
+  if (!confirm('Are you sure you want to delete this file?')) return;
+  const token = localStorage.getItem('token');
+  // Delete from storage
+  await initSupabase();
+  if (supabaseClient) {
+    await supabaseClient.storage.from('pdfs').remove([filePath]);
+  }
+  // Delete from DB
+  await fetch(`/api/reject/${id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+  loadApprovedFiles();
+}
