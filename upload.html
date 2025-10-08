@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload Resources - Bit Resource Website</title>
+  <link rel="stylesheet" href="/public/css/styles.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Bit Resource Website</h1>
+      <nav>
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/upload.html">Upload</a></li>
+          <li><a href="/admin.html">Admin</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <main class="container">
+    <section>
+      <h2>Upload Resources</h2>
+      <p>Upload multiple PDF files. They will be reviewed by an admin before becoming available for download.</p>
+      <form id="upload-form" enctype="multipart/form-data">
+        <label for="branch">Branch:</label>
+        <select id="branch" name="branch" required>
+          <option value="CSE">CSE</option>
+          <option value="ECE">ECE</option>
+          <option value="ME">ME</option>
+          <!-- Add more branches as needed -->
+        </select>
+
+        <label for="semester">Semester:</label>
+        <select id="semester" name="semester" required>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+        </select>
+
+        <label for="subject">Subject:</label>
+        <input type="text" id="subject" name="subject" required>
+
+        <label for="type">Type:</label>
+        <select id="type" name="type" required>
+          <option value="PYQ">PYQ</option>
+          <option value="CT">CT</option>
+          <option value="Notes">Notes</option>
+        </select>
+
+        <label for="files">Files (PDF only):</label>
+        <input type="file" id="files" name="files" multiple accept=".pdf" required>
+
+        <input type="submit" value="Upload">
+      </form>
+      <div id="upload-status"></div>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/public/js/app.js"></script>
+</body>
+</html>
