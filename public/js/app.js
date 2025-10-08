@@ -116,8 +116,13 @@ let navStack = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
   await initSupabase();
-  loadBranches();
-  document.getElementById('back-btn').addEventListener('click', goBack);
+  if (document.getElementById('files-grid')) {
+    loadBranches();
+  }
+  const backBtn = document.getElementById('back-btn');
+  if (backBtn) {
+    backBtn.addEventListener('click', goBack);
+  }
 });
 
 async function loadBranches() {
@@ -226,7 +231,10 @@ function renderFileCards(files) {
     `;
     grid.appendChild(card);
   });
-  document.getElementById('back-btn').style.display = navStack.length > 0 ? 'block' : 'none';
+  const backBtn = document.getElementById('back-btn');
+  if (backBtn) {
+    backBtn.style.display = navStack.length > 0 ? 'block' : 'none';
+  }
 }
 
 function navigate(level, item, ...params) {
@@ -423,13 +431,13 @@ async function loadApprovedFiles() {
     card.innerHTML = `
       <h3>${file.filename}</h3>
       <p>Branch: ${file.branch} | Semester: ${file.semester} | Subject: ${file.subject} | Type: ${file.type}</p>
-      <button onclick="deleteFile(${file.id}, '${file.branch}/${file.semester}/${file.subject}/${file.type}/${file.filename}')">Delete</button>
+      <button onclick="deleteFile(${file.id})">Delete</button>
     `;
     grid.appendChild(card);
   });
 }
 
-async function deleteFile(id, filePath) {
+async function deleteFile(id) {
   if (!confirm('Are you sure you want to delete this file?')) return;
   const token = localStorage.getItem('token');
   // Delete from DB and storage via API
