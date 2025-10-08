@@ -1,10 +1,5 @@
 {
   "version": 2,
-  "functions": {
-    "api/*.js": {
-      "runtime": "nodejs18.x"
-    }
-  },
   "env": {
     "SUPABASE_URL": "https://kbdntbovzqulgwhcbeth.supabase.co",
     "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiZG50Ym92enF1bGd3aGNiZXRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4NjE4MTQsImV4cCI6MjA3NTQzNzgxNH0.rnE3BZKlhoVAamW8Tn9IEc0uVo7ffgKRbFZSDOKPqvw",
