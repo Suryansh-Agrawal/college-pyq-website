@@ -1,8 +1,18 @@
 // Global variables
-const supabaseClientUrl = 'YOUR_SUPABASE_URL'; // Replace with actual URL
-const supabaseClientKey = 'YOUR_SUPABASE_ANON_KEY'; // Replace with actual key
-const { createClient } = supabaseClient;
-const supabaseClientClient = createClient(supabaseClientUrl, supabaseClientKey);
+let supabaseClient;
+let supabaseUrl;
+
+async function initSupabase() {
+  try {
+    const response = await fetch('/api/config');
+    const config = await response.json();
+    supabaseUrl = config.supabaseUrl;
+    const { createClient } = supabase;
+    supabaseClient = createClient(config.supabaseUrl, config.supabaseAnonKey);
+  } catch (error) {
+    console.error('Failed to initialize Supabase:', error);
+  }
+}
 
 // Cache for options
 let optionsCache = {};
@@ -99,6 +109,7 @@ function populateSelect(selectElement, options) {
 
 // Load all approved files on page load
 document.addEventListener('DOMContentLoaded', async () => {
+  await initSupabase();
   const filesGrid = document.getElementById('files-grid');
   if (filesGrid) {
     try {
@@ -111,7 +122,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         card.innerHTML = `
           <h3>${file.filename}</h3>
           <p>Branch: ${file.branch} | Semester: ${file.semester} | Subject: ${file.subject} | Type: ${file.type}</p>
-          <a href="${supabaseClientUrl}/storage/v1/object/public/pdfs/${file.branch}/${file.semester}/${file.subject}/${file.type}/${file.filename}" target="_blank">Download</a>
+          <a href="${supabaseUrl}/storage/v1/object/public/pdfs/${file.branch}/${file.semester}/${file.subject}/${file.type}/${file.filename}" target="_blank">Download</a>
         `;
         filesGrid.appendChild(card);
       });
@@ -126,6 +137,7 @@ const uploadForm = document.getElementById('upload-form');
 if (uploadForm) {
   uploadForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    await initSupabase();
     const formData = new FormData(uploadForm);
     const files = formData.getAll('files');
     const branch = formData.get('branch');
@@ -187,7 +199,7 @@ if (loginForm) {
     if (result.token) {
       alert('Login successful');
       localStorage.setItem('token', result.token);
-      window.location.href = '/admin/dashboard';
+      window.location.href = '/admin.html';
     } else {
       alert('Incorrect username or password');
     }
@@ -250,6 +262,14 @@ async function rejectFile(id) {
   loadPendingFiles();
 }
 
-if (document.getElementById('pending-table')) {
-  loadPendingFiles();
-}
+// Check if logged in
+document.addEventListener('DOMContentLoaded', () => {
+  const token = localStorage.getItem('token');
+  const loginSection = document.getElementById('login-section');
+  const dashboardSection = document.getElementById('dashboard-section');
+  if (token && loginSection && dashboardSection) {
+    loginSection.style.display = 'none';
+    dashboardSection.style.display = 'block';
+    loadPendingFiles();
+  }
+});
