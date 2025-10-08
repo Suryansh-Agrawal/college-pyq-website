@@ -6,11 +6,11 @@
     }
   },
   "env": {
-    "SUPABASE_URL": "@supabase-url",
-    "SUPABASE_ANON_KEY": "@supabase-anon-key",
-    "SUPABASE_SERVICE_ROLE_KEY": "@supabase-service-role-key",
-    "ADMIN_USERNAME": "@admin-username",
-    "ADMIN_PASSWORD": "@admin-password",
-    "JWT_SECRET": "@jwt-secret"
+    "SUPABASE_URL": "https://kbdntbovzqulgwhcbeth.supabase.co",
+    "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiZG50Ym92enF1bGd3aGNiZXRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4NjE4MTQsImV4cCI6MjA3NTQzNzgxNH0.rnE3BZKlhoVAamW8Tn9IEc0uVo7ffgKRbFZSDOKPqvw",
+    "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtiZG50Ym92enF1bGd3aGNiZXRoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTg2MTgxNCwiZXhwIjoyMDc1NDM3ODE0fQ._0T4IZMgxhS2qNuSqKGowAIrwPJvJuQzWGBPA7jnVYw",
+    "ADMIN_USERNAME": "admin",
+    "ADMIN_PASSWORD": "1234",
+    "JWT_SECRET": "46eef30e737cf44172e4e275b912f605c376511dc99b54c005967d17d70b1808"
   }
 }
