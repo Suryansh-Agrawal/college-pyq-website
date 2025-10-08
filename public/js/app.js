@@ -18,8 +18,8 @@ async function initSupabase() {
   }
 }
 
-// Cache for options
-let optionsCache = {};
+// Cache for navigation
+let navCache = {};
 
 // Function to fetch branches
 async function fetchBranches() {
@@ -121,9 +121,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadBranches() {
+  if (navCache.branches) {
+    renderCards(navCache.branches, 'branch');
+    return;
+  }
   try {
     const response = await fetch('/api/branches');
     const branches = await response.json();
+    navCache.branches = branches;
     renderCards(branches, 'branch');
   } catch (error) {
     console.error('Error fetching branches:', error);
@@ -131,9 +136,15 @@ async function loadBranches() {
 }
 
 async function loadSemesters(branch) {
+  const key = `semesters_${branch}`;
+  if (navCache[key]) {
+    renderCards(navCache[key], 'semester', branch);
+    return;
+  }
   try {
     const response = await fetch(`/api/semesters?branch=${branch}`);
     const semesters = await response.json();
+    navCache[key] = semesters;
     renderCards(semesters, 'semester', branch);
   } catch (error) {
     console.error('Error fetching semesters:', error);
@@ -141,9 +152,15 @@ async function loadSemesters(branch) {
 }
 
 async function loadSubjects(branch, semester) {
+  const key = `subjects_${branch}_${semester}`;
+  if (navCache[key]) {
+    renderCards(navCache[key], 'subject', branch, semester);
+    return;
+  }
   try {
     const response = await fetch(`/api/subjects?branch=${branch}&semester=${semester}`);
     const subjects = await response.json();
+    navCache[key] = subjects;
     renderCards(subjects, 'subject', branch, semester);
   } catch (error) {
     console.error('Error fetching subjects:', error);
@@ -151,9 +168,15 @@ async function loadSubjects(branch, semester) {
 }
 
 async function loadTypes(branch, semester, subject) {
+  const key = `types_${branch}_${semester}_${subject}`;
+  if (navCache[key]) {
+    renderCards(navCache[key], 'type', branch, semester, subject);
+    return;
+  }
   try {
     const response = await fetch(`/api/types?branch=${branch}&semester=${semester}&subject=${subject}`);
     const types = await response.json();
+    navCache[key] = types;
     renderCards(types, 'type', branch, semester, subject);
   } catch (error) {
     console.error('Error fetching types:', error);
@@ -161,26 +184,33 @@ async function loadTypes(branch, semester, subject) {
 }
 
 async function loadFiles(branch, semester, subject, type) {
-  try {
-    const response = await fetch('/api/files');
-    const allFiles = await response.json();
-    const files = allFiles.filter(f => f.branch === branch && f.semester === semester && f.subject === subject && f.type === type);
-    renderFileCards(files);
-  } catch (error) {
-    console.error('Error fetching files:', error);
+  if (!navCache.allFiles) {
+    try {
+      const response = await fetch('/api/files');
+      navCache.allFiles = await response.json();
+    } catch (error) {
+      console.error('Error fetching files:', error);
+      return;
+    }
   }
+  const files = navCache.allFiles.filter(f => f.branch === branch && f.semester === semester && f.subject === subject && f.type === type);
+  renderFileCards(files);
 }
 
 function renderCards(items, level, ...params) {
   const grid = document.getElementById('files-grid');
   grid.innerHTML = '';
-  items.forEach(item => {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `<h3>${item}</h3>`;
-    card.onclick = () => navigate(level, item, ...params);
-    grid.appendChild(card);
-  });
+  if (items.length === 0) {
+    grid.innerHTML = '<div class="loading">No items available</div>';
+  } else {
+    items.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `<h3>${item}</h3>`;
+      card.onclick = () => navigate(level, item, ...params);
+      grid.appendChild(card);
+    });
+  }
   document.getElementById('back-btn').style.display = navStack.length > 0 ? 'block' : 'none';
 }
 
@@ -332,7 +362,7 @@ async function loadPendingFiles() {
     approveBtn.textContent = 'Approve';
     approveBtn.onclick = () => approveFile(file.id);
     const rejectBtn = document.createElement('button');
-    rejectBtn.textContent = 'Reject';
+    rejectBtn.textContent = 'Delete';
     rejectBtn.onclick = () => rejectFile(file.id);
     actionsCell.appendChild(viewBtn);
     actionsCell.appendChild(approveBtn);
@@ -409,4 +439,23 @@ async function deleteFile(id, filePath) {
   // Delete from DB
   await fetch(`/api/reject/${id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
   loadApprovedFiles();
+}
+
+const logoutBtn = document.getElementById('logout-btn');
+if (logoutBtn) {
+  logoutBtn.addEventListener('click', logoutAdmin);
+}
+
+async function logoutAdmin() {
+  try {
+    // Clear caches
+    navCache = {};
+    // Clear session
+    localStorage.removeItem('token');
+    // Redirect to login
+    window.location.href = '/admin.html';
+  } catch (error) {
+    console.error('Logout error:', error);
+    alert('Logout failed');
+  }
 }

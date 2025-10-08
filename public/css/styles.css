@@ -238,6 +238,12 @@ input, select, textarea {
   transform: scale(1.05);
 }
 
+.loading {
+  text-align: center;
+  font-size: 18px;
+  color: #666;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   nav ul {
