@@ -53,13 +53,13 @@ A lightweight, responsive website for students to view and download PYQs, Notes,
 
 3. **Configure Vercel:**
    - Create a Vercel account and link the project.
-   - Set environment variables:
+   - **Important:** Environment variables are NOT defined in vercel.json. Set them securely in Vercel dashboard (Project Settings > Environment Variables). Do NOT commit actual keys to the repository:
      - `SUPABASE_URL`: Your Supabase project URL
-     - `SUPABASE_ANON_KEY`: Supabase anon key
-     - `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key
+     - `SUPABASE_ANON_KEY`: Supabase anon key (public, but keep secret)
+     - `SUPABASE_SERVICE_ROLE_KEY`: Supabase service role key (keep highly secret)
      - `ADMIN_USERNAME`: Admin username (default: admin)
      - `ADMIN_PASSWORD`: Admin password (default: 1234)
-     - `JWT_SECRET`: A secret key for JWT tokens
+     - `JWT_SECRET`: A random secret key for JWT tokens (generate securely)
 
 4. **Deploy:**
    - Push to GitHub and connect to Vercel for automatic deployment.
