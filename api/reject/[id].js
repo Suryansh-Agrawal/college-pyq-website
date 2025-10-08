@@ -26,27 +26,40 @@ export default async function handler(req, res) {
   const { id } = req.query;
 
   try {
-    // Update status to rejected
-    const { error } = await supabase
+    // Get file data
+    const { data: fileData, error: selectError } = await supabase
       .from('files')
-      .update({ status: 'rejected' })
-      .eq('id', id);
-
-    if (error) throw error;
-
-    // Optionally delete file from storage
-    const { data: fileData } = await supabase
-      .from('files')
-      .select('branch, semester, subject, type, filename')
+      .select('status, branch, semester, subject, type, filename')
       .eq('id', id)
       .single();
 
+    if (selectError) throw selectError;
+
+    // Delete file from storage
     if (fileData) {
       const filePath = `${fileData.branch}/${fileData.semester}/${fileData.subject}/${fileData.type}/${fileData.filename}`;
       await supabase.storage.from('pdfs').remove([filePath]);
     }
 
-    res.status(200).json({ message: 'File rejected' });
+    if (fileData.status === 'approved') {
+      // Delete from DB for approved files
+      const { error: deleteError } = await supabase
+        .from('files')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) throw deleteError;
+      res.status(200).json({ message: 'File deleted' });
+    } else {
+      // Update status to rejected for pending files
+      const { error: updateError } = await supabase
+        .from('files')
+        .update({ status: 'rejected' })
+        .eq('id', id);
+
+      if (updateError) throw updateError;
+      res.status(200).json({ message: 'File rejected' });
+    }
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

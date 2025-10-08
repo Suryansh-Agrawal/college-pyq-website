@@ -385,6 +385,7 @@ async function approveFile(id) {
 }
 
 async function rejectFile(id) {
+  if (!confirm('Are you sure you want to reject this file?')) return;
   const token = localStorage.getItem('token');
   const response = await fetch(`/api/reject/${id}`, {
     method: 'POST',
@@ -431,14 +432,14 @@ async function loadApprovedFiles() {
 async function deleteFile(id, filePath) {
   if (!confirm('Are you sure you want to delete this file?')) return;
   const token = localStorage.getItem('token');
-  // Delete from storage
-  await initSupabase();
-  if (supabaseClient) {
-    await supabaseClient.storage.from('pdfs').remove([filePath]);
+  // Delete from DB and storage via API
+  const response = await fetch(`/api/reject/${id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+  if (response.ok) {
+    alert('File deleted successfully');
+    loadApprovedFiles();
+  } else {
+    alert('Failed to delete file');
   }
-  // Delete from DB
-  await fetch(`/api/reject/${id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
-  loadApprovedFiles();
 }
 
 const logoutBtn = document.getElementById('logout-btn');
